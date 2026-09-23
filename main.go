@@ -12,9 +12,10 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	fserv := http.FileServer(http.Dir(rootpath + "/pub/"))
+	fserv := http.FileServer(http.Dir(rootpath))
 
-	mux.Handle("/", fserv)
+	mux.Handle("/app/", http.StripPrefix("/app", fserv))
+	mux.HandleFunc("/healthz", handleReadyness)
 
 	s := &http.Server{
 		Addr:           ":" + port,
