@@ -7,15 +7,23 @@ import (
 )
 
 func main() {
+	const port = "8080"
+	const rootpath = "."
+
 	mux := http.NewServeMux()
-	mux.Handle("/", http.NotFoundHandler())
+
+	fserv := http.FileServer(http.Dir(rootpath + "/pub/"))
+
+	mux.Handle("/", fserv)
+
 	s := &http.Server{
-		Addr:           ":8080",
+		Addr:           ":" + port,
 		Handler:        mux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
+	log.Printf("Starting server on port: %s\n", port)
 	log.Fatal(s.ListenAndServe())
 }
