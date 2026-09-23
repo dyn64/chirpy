@@ -1,7 +1,21 @@
 package main
 
-import "fmt"
+import (
+	"log"
+	"net/http"
+	"time"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
+	mux := http.NewServeMux()
+	mux.Handle("/", http.NotFoundHandler())
+	s := &http.Server{
+		Addr:           ":8080",
+		Handler:        mux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	log.Fatal(s.ListenAndServe())
 }
