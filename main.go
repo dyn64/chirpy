@@ -18,12 +18,14 @@ func main() {
 	mux := http.NewServeMux()
 
 	fserv := http.FileServer(http.Dir(rootpath))
-	var apiCfg apiConfig
+	apiCfg := apiConfig{
+		fileserverHits: atomic.Int32{},
+	}
 
-	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middleWareMedtricsInc(fserv)))
-	mux.HandleFunc("/healthz", handleReadyness)
-	mux.Handle("/metrics", http.StripPrefix("/metrics", apiCfg.middleWareResponse(fserv)))
-	mux.Handle("/reset", http.StripPrefix("/reset", apiCfg.middleWareReset(fserv)))
+	mux.Handle("/app/", apiCfg.middleWareMedtricsInc(http.StripPrefix("/app", fserv)))
+	mux.HandleFunc("GET /healthz", handleReadyness)
+	mux.HandleFunc("GET /metrics", apiCfg.middleWareMetrics)
+	mux.HandleFunc("POST /reset", apiCfg.handlerReset)
 
 	s := &http.Server{
 		Addr:           ":" + port,
