@@ -18,12 +18,13 @@ func (cfg *apiConfig) handlerValidate(w http.ResponseWriter, r *http.Request) {
 	input := inputVals{}
 	err := decoder.Decode(&input)
 	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
 		log.Printf("Error reading validation input: %s", err)
 		w.WriteHeader(500)
 		return
 	}
 	if len(input.Body) > 400 {
-		respondWithError(w, 400, "Error, chirp is too long")
+		respondWithError(w, http.StatusBadRequest, "Error, chirp is too long", nil)
 		return
 	}
 
