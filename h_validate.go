@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 func (cfg *apiConfig) handlerValidate(w http.ResponseWriter, r *http.Request) {
@@ -12,6 +14,9 @@ func (cfg *apiConfig) handlerValidate(w http.ResponseWriter, r *http.Request) {
 	}
 	type responseOK struct {
 		Valid bool `json:"valid"`
+	}
+	type responseClean struct {
+		Clean string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -28,5 +33,20 @@ func (cfg *apiConfig) handlerValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, 200, responseOK{Valid: true})
+	cleanResponse := responseClean{Clean: profanityFilter(input.Body)}
+
+	respondWithJSON(w, 200, cleanResponse)
+}
+
+func profanityFilter(s string) string {
+	filteredWords := regexp.MustCompile(`kerfuffle|sharbert|fornax`)
+
+	words := strings.Split(s, " ")
+	for i, word := range words {
+		if filteredWords.MatchString(strings.ToLower(word)) {
+			words[i] = "****"
+		}
+
+	}
+	return strings.Join(words, " ")
 }
