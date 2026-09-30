@@ -25,7 +25,7 @@ func (cfg *apiConfig) handlerValidate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
 		log.Printf("Error reading validation input: %s", err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if len(input.Body) > 400 {
@@ -35,7 +35,7 @@ func (cfg *apiConfig) handlerValidate(w http.ResponseWriter, r *http.Request) {
 
 	cleanResponse := responseClean{Clean: profanityFilter(input.Body)}
 
-	respondWithJSON(w, 200, cleanResponse)
+	respondWithJSON(w, http.StatusOK, cleanResponse)
 }
 
 func profanityFilter(s string) string {
