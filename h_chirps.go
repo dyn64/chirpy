@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -80,4 +81,34 @@ func (cfg *apiConfig) getAllChirps(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	respondWithJSON(w, http.StatusOK, aChirps)
+}
+
+func (cfg *apiConfig) getChirp(w http.ResponseWriter, r *http.Request) {
+	arg := r.PathValue("ChirpID")
+	if arg == "" {
+		log.Printf("Error, missing chirp id in request")
+		respondWithError(w, http.StatusBadRequest, "Missing ID in request", nil)
+		return
+	}
+	id, err := uuid.Parse(arg)
+	if err != nil {
+		log.Printf("Error parsing ID: %v", err)
+		respondWithError(w, http.StatusBadRequest, "Error parsing ID", err)
+		return
+	}
+	chirp, err := cfg.dbQueries.GetChirpByID(r.Context(), id)
+	if err != nil {
+		log.Printf("Error getting chirp: %s", err)
+		errorMessage := fmt.Sprintf("Chirp with ID: %v not found", id)
+		respondWithError(w, http.StatusNotFound, errorMessage, err)
+	}
+
+	actualChirp := chirpJSON{
+		ID:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID,
+	}
+	respondWithJSON(w, http.StatusOK, actualChirp)
 }
