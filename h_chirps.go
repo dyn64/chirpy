@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dyn64/chirpy/internal/auth"
 	"github.com/dyn64/chirpy/internal/database"
 	"github.com/google/uuid"
 )
@@ -21,8 +22,7 @@ type chirpJSON struct {
 
 func (cfg *apiConfig) addChirp(w http.ResponseWriter, r *http.Request) {
 	type inputVals struct {
-		Body    string    `json:"body"`
-		User_id uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 	type responseClean struct {
 		Clean string `json:"cleaned_body"`
@@ -34,9 +34,19 @@ func (cfg *apiConfig) addChirp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
 		log.Printf("Error reading validation input: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	bearer, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error in header: ", err)
+		log.Printf("Getbearertoken failed: %v", err)
+	}
+	user_id, err := auth.ValidateJWT(bearer, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Wrong token", err)
+		log.Printf("Error validating jwt token, %v", err)
+	}
+
 	if len(input.Body) > 400 {
 		respondWithError(w, http.StatusBadRequest, "Error, chirp is too long", nil)
 		return
@@ -45,7 +55,7 @@ func (cfg *apiConfig) addChirp(w http.ResponseWriter, r *http.Request) {
 	cleanResponse := responseClean{Clean: profanityFilter(input.Body)}
 	createArgs := database.CreateChirpParams{
 		Body:   cleanResponse.Clean,
-		UserID: input.User_id,
+		UserID: user_id,
 	}
 
 	chirp, err := cfg.dbQueries.CreateChirp(r.Context(), createArgs)

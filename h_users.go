@@ -63,9 +63,11 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	type request struct {
 		Password string `json:"password"`
 		Email    string `json:"email"`
+		Expires  *int   `json:"expires_in_seconds,omitempty"`
 	}
 	type response struct {
 		User
+		Token string `json:"token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -90,12 +92,20 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusUnauthorized, "Incorrect email or passord", err)
 		return
 	}
+	var token_life time.Duration
+	if input.Expires != nil {
+		token_life = time.Second * time.Duration(*input.Expires)
+	} else {
+		token_life = time.Hour * 1
+	}
+	token, err := auth.MakeJWT(usr.ID, cfg.secret, token_life)
 
 	user := response{
 		ID:        usr.ID,
 		CreatedAt: usr.CreatedAt,
 		UpdatedAt: usr.UpdatedAt,
 		Email:     usr.Email,
+		Token:     token,
 	}
 
 	respondWithJSON(w, http.StatusOK, user)
