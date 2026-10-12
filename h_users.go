@@ -67,7 +67,8 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 	type response struct {
 		User
-		Token string `json:"token"`
+		Token         string `json:"token"`
+		Refresh_token string `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -92,20 +93,26 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusUnauthorized, "Incorrect email or passord", err)
 		return
 	}
-	var token_life time.Duration
-	if input.Expires != nil {
-		token_life = time.Second * time.Duration(*input.Expires)
-	} else {
-		token_life = time.Hour * 1
-	}
-	token, err := auth.MakeJWT(usr.ID, cfg.secret, token_life)
 
+	token, err := auth.MakeJWT(usr.ID, cfg.secret)
+	refresh_token := auth.MakeRefreshToken()
+
+	refresh_params := database.AddRefreshTokenParams{
+		Token:     refresh_token,
+		UserID:    usr.ID,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 60),
+	}
+	err = cfg.dbQueries.AddRefreshToken(r.Context(), refresh_params)
+	if err != nil {
+		log.Printf("Error adding refresh token to db: %v", err)
+	}
 	user := response{
-		ID:        usr.ID,
-		CreatedAt: usr.CreatedAt,
-		UpdatedAt: usr.UpdatedAt,
-		Email:     usr.Email,
-		Token:     token,
+		ID:            usr.ID,
+		CreatedAt:     usr.CreatedAt,
+		UpdatedAt:     usr.UpdatedAt,
+		Email:         usr.Email,
+		Token:         token,
+		Refresh_token: refresh_token,
 	}
 
 	respondWithJSON(w, http.StatusOK, user)

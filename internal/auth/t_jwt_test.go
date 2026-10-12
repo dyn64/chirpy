@@ -2,7 +2,6 @@ package auth
 
 import (
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -21,7 +20,7 @@ func TestEncodeToken(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		token, err := MakeJWT(id, "Allyourbase", time.Minute*20)
+		token, err := MakeJWT(id, "Allyourbase")
 		if err != nil {
 			t.Fatalf("Error making token - %v", err)
 		}

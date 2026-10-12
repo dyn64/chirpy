@@ -16,11 +16,11 @@ const (
 	TokenTypeAccess TokenType = "chirpy-access"
 )
 
-func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+func MakeJWT(userID uuid.UUID, tokenSecret string) (string, error) {
 	claimsStruct := &jwt.RegisteredClaims{
 		Issuer:    string(TokenTypeAccess),
 		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(time.Hour * 1))),
 		Subject:   userID.String(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claimsStruct)
