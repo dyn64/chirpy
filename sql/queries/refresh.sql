@@ -8,9 +8,16 @@ $2,
 $3,
 NULL);
 
--- name: GetUserFromRefreshToken :one
+-- name: bad_GetUserFromRefreshToken_bad :one
 SELECT * FROM refresh_token
 WHERE token = $1;
+
+-- name: GetUserFromRefreshToken :one
+SELECT users.* FROM users
+JOIN refresh_token ON users.id = refresh_token.user_id
+WHERE refresh_token.token = $1
+AND revoked_at is NULL
+AND expires_at > NOW();
 
 -- name: RevokeRefreshToken :exec
 UPDATE refresh_token

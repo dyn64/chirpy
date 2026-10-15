@@ -35,20 +35,22 @@ func (q *Queries) AddRefreshToken(ctx context.Context, arg AddRefreshTokenParams
 }
 
 const getUserFromRefreshToken = `-- name: GetUserFromRefreshToken :one
-SELECT token, created_at, updated_at, user_id, expires_at, revoked_at FROM refresh_token
-WHERE token = $1
+SELECT users.id, users.created_at, users.updated_at, users.email, users.hashed_password FROM users
+JOIN refresh_token ON users.id = refresh_token.user_id
+WHERE refresh_token.token = $1
+AND revoked_at is NULL
+AND expires_at > NOW()
 `
 
-func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (RefreshToken, error) {
+func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUserFromRefreshToken, token)
-	var i RefreshToken
+	var i User
 	err := row.Scan(
-		&i.Token,
+		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.UserID,
-		&i.ExpiresAt,
-		&i.RevokedAt,
+		&i.Email,
+		&i.HashedPassword,
 	)
 	return i, err
 }
@@ -63,4 +65,23 @@ where token = $1
 func (q *Queries) RevokeRefreshToken(ctx context.Context, token string) error {
 	_, err := q.db.ExecContext(ctx, revokeRefreshToken, token)
 	return err
+}
+
+const bad_GetUserFromRefreshToken_bad = `-- name: bad_GetUserFromRefreshToken_bad :one
+SELECT token, created_at, updated_at, user_id, expires_at, revoked_at FROM refresh_token
+WHERE token = $1
+`
+
+func (q *Queries) bad_GetUserFromRefreshToken_bad(ctx context.Context, token string) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, bad_GetUserFromRefreshToken_bad, token)
+	var i RefreshToken
+	err := row.Scan(
+		&i.Token,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UserID,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+	)
+	return i, err
 }

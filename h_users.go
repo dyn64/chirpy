@@ -66,9 +66,12 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		Expires  *int   `json:"expires_in_seconds,omitempty"`
 	}
 	type response struct {
-		User
-		Token         string `json:"token"`
-		Refresh_token string `json:"refresh_token"`
+		ID            uuid.UUID `json:"id"`
+		CreatedAt     time.Time `json:"created_at"`
+		UpdatedAt     time.Time `json:"updated_at"`
+		Email         string    `json:"email"`
+		Token         string    `json:"token"`
+		Refresh_token string    `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -95,6 +98,9 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token, err := auth.MakeJWT(usr.ID, cfg.secret)
+	if err != nil {
+		log.Printf("Error making jwt: %v", err)
+	}
 	refresh_token := auth.MakeRefreshToken()
 
 	refresh_params := database.AddRefreshTokenParams{

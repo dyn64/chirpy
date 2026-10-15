@@ -6,7 +6,7 @@ import (
 )
 
 func MakeRefreshToken() string {
-	var r_num []byte
+	r_num := make([]byte, 32)
 	rand.Read(r_num)
 	return hex.EncodeToString(r_num)
 }
