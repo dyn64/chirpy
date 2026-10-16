@@ -124,3 +124,60 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, user)
 
 }
+
+func (cfg *apiConfig) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
+	type request struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email     string    `json:"email"`
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Error, missing access token: %v", err)
+	}
+	user_id, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Error validating token: %v", err)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	input := request{}
+	err = decoder.Decode(&input)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error in request: %v", err)
+		return
+	}
+
+	pwHash, err := auth.HashPassword(input.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error creating password hash: %v", err)
+		return
+	}
+
+	params := database.UpdatePasswordParams{
+		ID:             user_id,
+		Email:          input.Email,
+		HashedPassword: pwHash,
+	}
+	db_user, err := cfg.dbQueries.UpdatePassword(r.Context(), params)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Error updating password in database", err)
+		return
+	}
+	updated_user := response{
+		ID:        db_user.ID,
+		Email:     db_user.Email,
+		CreatedAt: db_user.CreatedAt,
+		UpdatedAt: db_user.UpdatedAt,
+	}
+
+	respondWithJSON(w, http.StatusOK, updated_user)
+
+}

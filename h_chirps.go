@@ -40,11 +40,13 @@ func (cfg *apiConfig) addChirp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Error in header: ", err)
 		log.Printf("Getbearertoken failed: %v", err)
+		return
 	}
 	user_id, err := auth.ValidateJWT(bearer, cfg.secret)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Wrong token", err)
 		log.Printf("Error validating jwt token, %v", err)
+		return
 	}
 
 	if len(input.Body) > 400 {
