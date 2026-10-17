@@ -140,6 +140,7 @@ func (cfg *apiConfig) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Error, missing access token: %v", err)
+		return
 	}
 	user_id, err := auth.ValidateJWT(token, cfg.secret)
 	if err != nil {
