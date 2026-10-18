@@ -12,10 +12,11 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
+	ID         uuid.UUID `json:"id"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	Email      string    `json:"email"`
+	Chirpy_red bool      `json:"is_chirpy_red"`
 }
 
 func (cfg *apiConfig) handlerAdduser(w http.ResponseWriter, r *http.Request) {
@@ -50,10 +51,11 @@ func (cfg *apiConfig) handlerAdduser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := response{
-		ID:        usr.ID,
-		CreatedAt: usr.CreatedAt,
-		UpdatedAt: usr.UpdatedAt,
-		Email:     usr.Email,
+		ID:         usr.ID,
+		CreatedAt:  usr.CreatedAt,
+		UpdatedAt:  usr.UpdatedAt,
+		Email:      usr.Email,
+		Chirpy_red: usr.IsChirpyRed,
 	}
 	respondWithJSON(w, http.StatusCreated, user)
 
@@ -72,6 +74,7 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		Email         string    `json:"email"`
 		Token         string    `json:"token"`
 		Refresh_token string    `json:"refresh_token"`
+		Chirpy_red    bool      `json:"is_chirpy_red"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -119,6 +122,7 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		Email:         usr.Email,
 		Token:         token,
 		Refresh_token: refresh_token,
+		Chirpy_red:    usr.IsChirpyRed,
 	}
 
 	respondWithJSON(w, http.StatusOK, user)
