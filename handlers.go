@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/dyn64/chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 
@@ -32,9 +33,19 @@ func (cfg *apiConfig) handlerUpgradeUser(w http.ResponseWriter, r *http.Request)
 		} `json:"data"`
 	}
 
+	apikey, err := auth.GetApiKey(r.Header)
+	if err != nil || apikey != cfg.polka_api {
+		respondWithError(w, http.StatusUnauthorized, "Error missing or wrong ApiKey", err)
+		return
+	}
+	// if apikey != cfg.polka_api {
+	// 	respondWithError(w, http.StatusUnauthorized, "Wrong ApiKey", err)
+	// 	return
+	// }
+
 	decoder := json.NewDecoder(r.Body)
 	input := webhook{}
-	err := decoder.Decode(&input)
+	err = decoder.Decode(&input)
 	if err != nil || input.Event != "user.upgraded" {
 		log.Printf("Error in webhook or wrong event")
 		respondWithJSON(w, http.StatusNoContent, nil)

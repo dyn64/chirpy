@@ -18,6 +18,7 @@ type apiConfig struct {
 	dbQueries      *database.Queries
 	platform       string
 	secret         string
+	polka_api      string
 }
 
 func main() {
@@ -39,6 +40,7 @@ func main() {
 		dbQueries:      database.New(db),
 		platform:       os.Getenv("PLATFORM"),
 		secret:         os.Getenv("CHIRP_SECRET"),
+		polka_api:      os.Getenv("POLKA_KEY"),
 	}
 
 	mux.Handle("/app/", apiCfg.middleWareMedtricsInc(http.StripPrefix("/app", fserv)))
