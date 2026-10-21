@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dyn64/chirpy/internal/auth"
@@ -80,18 +81,27 @@ func (cfg *apiConfig) getAllChirps(w http.ResponseWriter, r *http.Request) {
 	auth := r.URL.Query().Get("author_id")
 	var chirps []database.Chirp
 	var err error
+	var Sorting string
+
+	sort_par := r.URL.Query().Get("sort")
+	if sort_par == "" || strings.ToLower(sort_par) == "asc" {
+		Sorting = "ASC"
+
+	} else if strings.ToLower(sort_par) == "desc" {
+		Sorting = "DESC"
+	}
 	if auth != "" {
 		author_id, err := uuid.Parse(auth)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Error in author-id", err)
 			return
 		}
-		chirps, err = cfg.dbQueries.GetChirpsByAuthorID(r.Context(), author_id)
+		chirps, err = cfg.dbQueries.GetChirpsByAuthorID(r.Context(), database.GetChirpsByAuthorIDParams{UserID: author_id, Sorting: Sorting})
 	} else {
-		chirps, err = cfg.dbQueries.GetChirps(r.Context())
+		chirps, err = cfg.dbQueries.GetChirps(r.Context(), Sorting)
 	}
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error getting chirps: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error getting chirps: %v", err)
 		return
 	}
 	var aChirps []chirpJSON

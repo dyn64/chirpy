@@ -11,7 +11,12 @@ RETURNING *;
 
 -- name: GetChirps :many
 SELECT * FROM chirps
-ORDER BY created_at ASC;
+ORDER BY
+CASE
+   WHEN @sorting = 'ASC' THEN created_at END ASC,
+CASE
+    WHEN @sorting = 'DESC' THEN created_at END DESC;
+
 
 -- name: GetChirpByID :one
 SELECT * FROM chirps
@@ -24,4 +29,8 @@ WHERE id = $1;
 -- name: GetChirpsByAuthorID :many
 SELECT * FROM chirps
 WHERE user_id = $1
-ORDER BY created_at ASC;
+ORDER BY
+CASE
+   WHEN @sorting = 'ASC' THEN created_at END ASC,
+CASE
+    WHEN @sorting = 'DESC' THEN created_at END DESC;
